@@ -1,56 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>HTML5 Chinese Calligraphy | chakming.github.io</title>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
-<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
-<link href="colorbox.css" rel="stylesheet">
-<script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
-<script src="http://cdn.jsdelivr.net/colorbox/1.4.4/jquery.colorbox-min.js"></script>
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    <meta charset="utf-8">
+    <title>HTML5 Chinese Calligraphy | chakming.github.io</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link href="colorbox.css" rel="stylesheet">
+    <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+    <script src="http://cdn.jsdelivr.net/colorbox/1.4.4/jquery.colorbox-min.js"></script>
 
-  ga('create', 'UA-40828047-1', 'github.io');
-  ga('send', 'pageview');
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                    m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
 
-</script>
+        ga('create', 'UA-40828047-1', 'github.io');
+        ga('send', 'pageview');
+
+    </script>
 </head>
 <body>
 <div id="container">
-	<div class="row">
-		<div class="span10 offset2">
-			<ul class="nav nav-pills">
-				<li class="active">
-					<a href="#">Home</a>
-				</li>
-				<li><a href="demo.html">Demo</a></li>
-			</ul>
-		</div>
-	</div>
-  	<div class="row">
-    <div class="span10 offset2">
-    	<h2>HTML5 Chinese Calligraphy</h2>
-		<hr />
-		<p class="lead">A prototype for HTML5 Chinese Calligraphy</p>
-		<a class='demo-image colorbox' href="images/demo.png" title="HTML5 chinese calligraphy Demo Image"><img src="images/demo.png" style="height: 100px;" class="img-polaroid img-rounded" /></a>
-		<p>This is my final year project prototype work between 2010 - 2011. However brush using mouse click isn't simulate too much and I've made another prototype on Chinese Calligraphy.</p>
-		<dl class="dl-horizontal">
-			<dt>HTML5</dt>
-			<dd>Using Canvas to simulate the paper drawing.</dd>
-			<dt>Stroke</dt>
-			<dd>Fake Chinese Stroke using Kasure Image Rendering. <small>(Kasure means: Brush with not enough link)</small></dd>
-			<dt>Brush Size</dt>
-			<dd>Control by Cursor Speed.</dd>
-		</dl>
+    <div class="row">
+        <div class="span10 offset2">
+            <div class="navbar ">
+                <div class="navbar-inner">
+                    <a class="brand" href="index.html">HTML5 Chinese Calligraphy</a>
+                    <ul class="nav">
+                        <li class="active"><a href="index.html">Home</a></li>
+                        <li><a href="demo.html">Demo</a></li>
+                    </ul>
+
+                    <ul class="nav pull-right">
+                        <li class="divider-vertical"></li>
+                        <li><a href="http://chakming.github.io">Chakming</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+
     </div>
-  </div>
+    <div class="row">
+        <div class="span10 offset2">
+            <h2>HTML5 Chinese Calligraphy</h2>
+            <hr/>
+            <p class="lead">A prototype for HTML5 Chinese Calligraphy</p>
+
+            <p class="text-center">
+                <a class="demo-image colorbox" href="images/demo.png" title="HTML5 chinese calligraphy Demo Image"><img
+                        src="images/demo.png" style="height: 100px;" class="img-polaroid img-rounded"/></a>
+                <br/>
+                <a class="demo-image colorbox" href="images/demo.png" title="HTML5 chinese calligraphy Demo Image">Demo
+                    Image (Characters: 陳奕迅)</a>
+            </p>
+
+            <p>This is my final year project prototype work between 2010 - 2011. However brush using mouse click isn't
+                simulate too much and I've made another prototype on Chinese Calligraphy.</p>
+            <dl class="dl-horizontal">
+                <dt>HTML5</dt>
+                <dd>Using Canvas to simulate the paper drawing.</dd>
+                <dt>Stroke</dt>
+                <dd>Fake Chinese Stroke using <em>Kasure Image Rendering</em>.
+                    <small>(Kasure means: <a class="colorbox" href="strokes/2.png">Brush with not enough link</a>)</small>
+                </dd>
+                <dt>Brush Size</dt>
+                <dd>Control by Cursor Speed.</dd>
+            </dl>
+        </div>
+    </div>
 </div>
 <script>
-	$("a.colorbox").colorbox();
+    $("a.colorbox").colorbox();
 </script>
 </body>
 </html> 
