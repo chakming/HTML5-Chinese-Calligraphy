@@ -1,0 +1,3 @@
+function delegate(a,b){return function(){b.apply(a,arguments)}}
+function bind(a){var b=arguments;return function(){var c=[];for(var d=1;d<b.length;++d)c.push(b[d]);for(var d=0;d<arguments.length;++d)c.push(arguments[d]);a.apply(this,c)}};(function(){var a=false,b=/xyz/.test(function(){xyz})?/\b_super\b/:/.*/;this.Class=function(){},Class.extend=function(c){var d=this.prototype;a=true;var e=new this;a=false;for(var f in c)e[f]=typeof c[f]=="function"&&typeof d[f]=="function"&&b.test(c[f])?(function(a,b){return function(){var c=this._super;this._super=d[a];var e=b.apply(this,arguments);this._super=c;return e}})(f,c[f]):c[f];function g(){!a&&this.init&&this.init.apply(this,arguments)}
+g.prototype=e,g.constructor=g,g.extend=arguments.callee;return g}})();

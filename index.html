@@ -1,0 +1,448 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HTML5 Chinese Calligraphy - chakming.github.io</title>
+<script type="text/javascript" src="js/canto.js"></script>
+<script type="text/javascript" src="js/jsEx.js"></script>
+<script type="text/javascript" src="js/classes.js"></script>
+<script type="text/javascript" src="js/brushes.js"></script>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" charset="utf-8">
+		var debug1;
+		window.addEventListener('load',function(){
+
+var NormalPaper = VirtualPaper.extend({
+	config: {
+		degreeOfSmoothness: {
+			name: "Degree Of Smoothness",
+			type: "range",
+			min: 0,
+			max: 1,
+			step: 0.5,
+			value: 0.5
+		},
+		absorbingAbility: {
+			name: "Absorbing Ability",
+			type: "range",
+			min: 0,
+			max: 1,
+			step: 0.5,
+			value: 0.5
+		},
+		diffusionControlFactor: {
+			name: "Diffusion Control Factor",
+			type: "range",
+			min: 0,
+			max: 1,
+			step: 0.5,
+			value: 0.5
+		},
+		dryingFactor: {
+			name: "Drying Factor",
+			type: "range",
+			min: 0,
+			max: 1,
+			step: 0.5,
+			value: 0.5
+		}
+	},
+	init: function(a, b){
+		this._super(a, b);
+		this._Canvas = document.getElementById(a);
+		this._Content = this._Canvas.getContext('2d');
+	}
+});
+
+
+window.ChineseCalligraphyBrush = Tool.extend({
+    config: {
+        color: {
+            name: "Ink Color",
+            type: "color",
+            value: [0, 0, 0]
+        },
+        size: {
+            name: "PaintBrush Size",
+            type: "range",
+            min: 0,
+            max: 30,
+            step: 0.5,
+            value: 10
+        },
+        degreeOfElasticity: {
+            name: "Degree Of Elasticity",
+            type: "range",
+            min: 0.1,
+            max: 1,
+            step: 0.1,
+            value: 1
+        },
+        thresholdForSplitting: {
+            name: "Threshold For Splitting",
+            type: "range",
+            min: 0.1,
+            max: 1,
+            step: 0.1,
+            value: 1
+        },
+        relocationFactor: {
+            name: "Relocation Factor",
+            type: "range",
+            min: 0.1,
+            max: 1,
+            step: 0.1,
+            value: 1
+        },
+        elongationCoefficient: {
+            name: "Elongation Coefficient",
+            type: "range",
+            min: 0.1,
+            max: 1,
+            step: 0.1,
+            value: 1
+        },
+        colorRenderingConrolFactor: {
+            name: "Color Rendering Conrol Factor",
+            type: "range",
+            min: 0.1,
+            max: 1,
+            step: 0.1,
+            value: 1
+        },
+        inkDiffusionDistanceFactor: {
+            name: "Ink Diffusion Distance Factor",
+            type: "range",
+            min: 0.1,
+            max: 1,
+            step: 0.1,
+            value: 1
+        }
+    },
+    _virtualPaper: null,
+    _lastPosition: null,
+    _lastMoveTime: null,
+    _velocityDampener: 0,     /*_velocityDampener: new MathEx.Dampener(10)*/
+    init: function (canvasElement, virtualPaper) {
+		//this._super(canvasElement, virtualPaper);
+		this._canvasElement = canvasElement;
+		this._context = this._canvasElement.getContext('2d');
+		this.previousBrushSize = 0;
+		this.splineBuffer = [];
+		this.previousVelocity = 0;
+		this.already = true;
+		
+		debug1 = $(this);
+		console.log("!");
+    },
+    dispose: function () {
+        //this._super()
+    },
+    mousedown: function (a, b, c, d) {
+        //this._super(a, b);
+		this.previousBrushSize = 0, this.brushUsing = null, this.splineBuffer = null, this.splineBuffer = [], this.drawStroke(a, b, c, d, false), this._lastPosition = {
+            x: c,
+            y: d
+        }, this._lastMoveTime = (new Date).getTime(), this.already = false;
+    },
+    mouseup: function (a, b, c, d) {
+        //this._super(a, b);
+		this.drawStroke(this._lastPosition.x, this._lastPosition.y, a, b, true), this._lastPosition = {
+            x: a,
+            y: b
+        }, this._lastMoveTime = (new Date).getTime()
+    },
+    mousemove: function (a, b, c, d) {
+        //this._super(a, b);
+		this.drawStroke(this._lastPosition.x, this._lastPosition.y, a, b, false), this._lastPosition = {
+            x: a,
+            y: b
+        }, this._lastMoveTime = (new Date).getTime()
+    },
+    mousehover: function (a, b) {
+       // this._super(a, b);//, this._drawPreviewAt(a, b)
+    },
+    mouseout: function (a, b) {
+        //this._super(a, b), this._canvasElement.reset();
+    },
+    drawLine: function (a, b, c, d, e, f, g) {
+		this._context.beginPath();
+		this._context.moveTo(a, b);
+		this._context.lineTo(c, d);
+		this._context.stroke({
+            lineWidth: 1,
+            strokeStyle: 'round',
+            lineCap: 'round'
+        });
+        return this
+    },
+	curve: function(t, b, c, d) {
+		return c*t/d + b;
+	},
+	drawStroke: function (x1, y1, x2, y2, brushEnded){
+		/// <summary>Draw stroke line (Spline).</summary>
+		if(x2 == 0 && y2 == 0) // tcuch screen hard code hardcode prevention debug
+			return;
+		
+		this.splineBuffer.push({x: x2, y: y2});
+		
+		
+		// ==== brush selection
+		var brushUsing = Html5Paint.Resources.KasureBrushes.Small;
+		/* 
+		if(this.splineBuffer.length > 6 && brushEnded==false){
+			//console.log("!");
+			var angle = MathEx.lawOfCosine(x1, y1, x2, y2, x1, y1-1);
+			//console.log(angle);
+			if(angle >=(45/360)*Math.PI && angle <(135/360)*Math.PI)
+				brushUsing = Html5Paint.Resources.KasureBrushesMingEdited.A;
+			else if(angle >=(135/360)*Math.PI && angle <(225/360)*Math.PI)
+				brushUsing = Html5Paint.Resources.KasureBrushesMingEdited.B;
+			else if(angle >=(225/360)*Math.PI&& angle <(315/360)*Math.PI)
+				brushUsing = Html5Paint.Resources.KasureBrushesMingEdited.C;
+			else //if(angle <=45 || angle >315)
+				brushUsing = Html5Paint.Resources.KasureBrushesMingEdited.D;
+				
+			console.log(brushUsing);
+		}
+		/*	*/
+			
+		// Draw Stroke part (Spline)
+		if (this.splineBuffer.length > 3) {
+			// ---- stroke setup
+			var t = (new Date).getTime() - this._lastMoveTime;
+			var distance = MathEx.distance(x1, y1, x2, y2);
+			var velocity = distance / Math.max(1, t);
+			var accelerate = (this.previousVelocity == 0) ? 0 : velocity / this.previousVelocity;
+			
+			var brushSize = Math.max(this.config.size.min,
+									 this.curve(velocity,
+											  this.config.size.max,
+											  (-this.config.size.max)-this.config.size.min,
+											  5 //this.velocityPressureCoff
+										  )
+									);
+			var segCount = 40; // spline
+			var buffLen = this.splineBuffer.length;
+			var points = Array.apply(null, this.splineBuffer);
+			points = points.slice(points.length-4);
+
+			points.unshift(points[0]);
+			points.push(points[points.length-1]);
+			//console.log(points.map(function(e){ return e.x+"," +e.y;}).join('; '));
+
+			for (var j = 0, m = points.length-3; j < m; j++) {
+				var p0 = points[j];
+				var p1 = points[j+1];
+				var p2 = points[j+2];
+				var p3 = points[j+3];
+				var v0 = { x: (p2.x - p0.x) / 2, y: (p2.y - p0.y) / 2, s: (p2.s - p0.s) };
+				var v1 = { x: (p3.x - p1.x) / 2, y: (p3.y - p1.y) / 2, s: (p3.s - p1.s) };
+
+				var tmp1 = (2*p1.x - 2*p2.x + v0.x + v1.x);
+				var tmp2 = (-3*p1.x + 3*p2.x - 2*v0.x - v1.x);
+				var tmp3 = (2*p1.y - 2*p2.y + v0.y + v1.y);
+				var tmp4 = (-3*p1.y + 3*p2.y - 2*v0.y - v1.y);
+
+				for (var i = 1, n = segCount+1; i <= n; i++) {
+					var seg = i/segCount;
+					
+					var tX = (tmp1 * Math.pow(seg, 3)) + (tmp2 * Math.pow(seg, 2)) + v0.x*seg + p1.x;
+					var tY = (tmp3 * Math.pow(seg, 3)) + (tmp4 * Math.pow(seg, 2)) + v0.y*seg + p1.y;
+
+					var tS = this.previousBrushSize + ((brushSize - this.previousBrushSize) / segCount)*i;
+				
+					if (this.previousBrushSize == brushSize && Math.random() < 0.3)
+						continue;
+
+					this._context.drawImage(brushUsing,
+						  tX - (tS/2),
+						  tY - (tS/2),
+						  tS,
+						  tS);
+					
+				}
+			}
+				this.previousBrushSize = brushSize, this.already=true;
+		}
+	},
+	drawStrokeOld: function (x1, y1, x2, y2, brushSize, e, f){
+		/*this._context.drawImage(Html5Paint.Resources.KasureBrushes.Small,
+		  x1 - (50/2),
+		  y1 - (50/2),
+		  50,
+		  50);*/
+		  
+		var segCount = 40; // spline
+		var p1 = {x: x1, y: y1};
+		var p2 = {x: x2, y: y2};
+		var v0 = { x: (x2 - x1) / 2, y: (y2 - y1) / 2 };
+		var v1 = { x: (x2 - x1) / 2, y: (y2 - y1) / 2 };
+
+		var tmp1 = (2*p1.x - 2*p2.x + v0.x + v1.x);
+		var tmp2 = (-3*p1.x + 3*p2.x - 2*v0.x - v1.x);
+		var tmp3 = (2*p1.y - 2*p2.y + v0.y + v1.y);
+		var tmp4 = (-3*p1.y + 3*p2.y - 2*v0.y - v1.y);
+
+		for (var i = 1, n = segCount+1; i <= n; i++) {
+			var seg = i/segCount;
+			var tX = (tmp1 * Math.pow(seg, 3)) + (tmp2 * Math.pow(seg, 2)) + v0.x*seg + p1.x;
+			var tY = (tmp3 * Math.pow(seg, 3)) + (tmp4 * Math.pow(seg, 2)) + v0.y*seg + p1.y;
+			var tS = this.previousBrushSize + ((brushSize - this.previousBrushSize) / segCount)*i;
+
+			if (this.previousBrushSize == brushSize && Math.random() < 0.3)
+				continue;
+
+
+			this._context.drawImage(Html5Paint.Resources.KasureBrushes.Small,
+			  tX - (tS/2),
+			  tY - (tS/2),
+			  tS,
+			  tS);
+		}
+	}
+});
+
+
+var Surface = Class.extend({
+    _canvasElement: null,
+    _sharedCanvasElement: null,
+    _updateCallback: null,
+    _width: null,
+    _height: null,
+    init: function (canvasElement, updateCallback) {
+        this._canvasElement = canvasElement, this._width = canvasElement.width, this._height = canvasElement.height, this._updateCallback = updateCallback,  this._initEventHandlers(), this._prevMousePoint = [0, 0], this._prevSmoothMousePoint = [0, 0], this._prevMouseChangeVector = [0, 0], this._mouseSmoothingFactor = 0.3, this._lastRotation = Math.PI / 2, this._ctx = this._canvasElement.getContext('2d')
+    },
+    setTool: function (toolName) {
+        this._activeTool instanceof Tool && this._activeTool.dispose();
+		this._canvasElement.style.cursor = 'crosshair';
+		
+		// fixed: sill strange: todo
+		//this._activeTool = new window['ChineseCalligraphyBrush'](this._canvasElement);
+		this._activeTool = new window[toolName](this._canvasElement);
+        return this._activeTool
+    },
+    getImageDataUrl: function () {
+        return this._canvasElement.getNativeCanvas().toDataURL()
+    },
+    _initEventHandlers: function () {
+		this._canvasElement.addEventListener('mousedown',delegate(this, this._onDrawStart), false);
+		this._canvasElement.addEventListener('touchstart',delegate(this, this._onDrawStart), false);
+		this._canvasElement.addEventListener('mousemove.Hover',delegate(this, this._onMouseHover), false);
+		this._canvasElement.addEventListener('mouseout.Hover',delegate(this, this._onMouseOut), false);
+		
+    },
+    _onDrawStart: function (a) { // == variable 'a': event == //
+		a.preventDefault(), a.stopPropagation(), a.touches && (a = a.touches[0]);
+		if (this._activeTool instanceof Tool) {
+            var c = a.pageX - this._canvasElement.offsetLeft,
+                d = a.pageY - this._canvasElement.offsetTop;
+            this._resetMouseSmoothing(c, d), this._activeTool.mousedown(c, d, a.pageX, a.pageY);
+			
+			// todo: jquery!
+			$(this._canvasElement).bind('mousemove.Draw',delegate(this, this._onDrawMove), false).bind('mouseup.Draw',delegate(this, this._onDrawEnd), false);
+			
+			//$(this._canvasElement).bind('touchmove.Draw',delegate(this, this._onDrawMove), false),
+			//$(this._canvasElement).bind('touchend.Draw',delegate(this, this._onDrawEnd), false);
+			
+			this._canvasElement.addEventListener('touchmove',delegate(this, this._onDrawMove), false),
+			this._canvasElement.addEventListener('touchend',delegate(this, this._onDrawEnd), false);
+			
+			//var e = document.getElementsByTagName('body')[0];
+			//$('body').bind('mouseup.Draw',delegate(this, this._onDrawEnd), false);
+			//$('body').addEventListener('touchend',delegate(this, this._onDrawEnd), false);
+			
+        }
+    },
+    _onDrawEnd: function (a) {
+        a.preventDefault(), a.stopPropagation();
+        var c = this._getSmoothMousePoint(a.pageX - this._canvasElement.offsetLeft, a.pageY - this._canvasElement.offsetTop);
+        $(this._canvasElement).unbind(".Draw"), $("body").unbind(".Draw"), this._activeTool.mouseup(c[0], c[1], a.pageX, a.pageY)
+    },
+    _onDrawMove: function (a) {
+		a.preventDefault(), a.stopPropagation(), a.touches && (a = a.touches[0]);
+        var c = this._getSmoothMousePoint(a.pageX - this._canvasElement.offsetLeft, a.pageY - this._canvasElement.offsetTop);
+        this._activeTool.mousemove(c[0], c[1], a.pageX, a.pageY)
+    },
+    _onMouseHover: function (a) {
+        a.preventDefault(), a.touches && (a = a.touches[0]);
+        //var b = this._canvasElement.offset();
+        this._activeTool.mousehover(a.pageX - this._canvasElement.offsetLeft, a.pageY - this._canvasElement.offsetTop, a.pageX, a.pageY)
+    },
+    _onMouseOut: function (a) {
+        a.preventDefault(), a.touches && (a = a.touches[0]);
+        //var b = this._canvasElement.offset();
+        this._activeTool.mouseout(a.pageX - this._canvasElement.offsetLeft, a.pageY - this._canvasElement.offsetTop, a.pageX, a.pageY)
+    },
+    _resetMouseSmoothing: function (a, b) {
+        this._prevMousePoint = this._prevSmoothMousePoint = [a, b], this._lastRotation = Math.PI / 2, this._prevMouseChangeVector = [0, 0]
+    },
+    _getSmoothMousePoint: function (a, b) {
+        var c = [a - this._prevMousePoint[0], b - this._prevMousePoint[1]],
+            d = this._prevSmoothMousePoint[0],
+            e = this._prevSmoothMousePoint[1];
+        c[0] * this._prevMouseChangeVector[0] + c[1] * this._prevMouseChangeVector[1] < 0 && (d = this._prevSmoothMousePoint[0] = this._prevMousePoint[0], e = this._prevSmoothMousePoint[1] = this._prevMousePoint[1], this._lastRotation += Math.PI), this._prevMouseChangeVector = c, this._prevMousePoint = [a, b], d = d + this._mouseSmoothingFactor * (a - d), e = e + this._mouseSmoothingFactor * (b - e);
+        var f = d - this._prevSmoothMousePoint[0],
+            g = d - this._prevSmoothMousePoint[1],
+            h = Math.sqrt(f * f + g * g);
+        this._prevSmoothMousePoint = [d, e];
+        return [d, e]
+    }
+});
+
+	
+var App = Class.extend({
+    _config: {
+        width: 766,
+        height: 944,
+        tools: [{
+            type: "ChineseCalligraphyBrush",
+            description: "Chinese Calligraphy Brush",
+            icon: "tool-icon-chinese-calligraphy-brush",
+            cursor: "crosshair"
+        }],
+		virtualPaper: [{
+            type: "NormalPaper",
+            description: "Normal Paper",
+            icon: "paper-icon-normal-paper",
+            cursor: "crosshair"
+        }]
+    },
+	init: function (canvasElementID) {
+		this._initSurface(canvasElementID), this._initTools();
+	},
+	_initSurface: function(canvasElementID){
+		this._canvas = document.getElementById(canvasElementID);
+		this._surface = new Surface(this._canvas);
+	},
+	_initTools: function(){
+		// todo: looping for tools and virtual Paper options ?
+		var b = this._config.tools[0];
+		this._surface.setTool(b.type);
+	},
+    _handleWindowResize: function () {
+        
+    },
+	_resetCanvas: function(){
+		//this._surface._resetCanvas();
+	}
+});
+
+
+
+			window.app = new App("canvas"); 
+		},false);
+	</script>
+<style type="text/css">body{margin:0;padding:0;font-family:Arial;}#container{position:relative;height:502px;width:602px;}#canvas{border:1px solid #000;left:0;top:0;position:absolute;}#sharecanvas{border:1px solid #000;left:0;top:0;position:absolute;}.button{display:inline-block;padding:5px 10px 6px;color:#fff;text-decoration:none;border-radius:5px;-moz-border-radius:5px;-webkit-border-radius:5px;box-shadow:0 1px 3px #CCC;-moz-box-shadow:0 1px 3px rgba(0,0,0,0.5);-webkit-box-shadow:0 1px 3px rgba(0,0,0,0.5);text-shadow:0 -1px 1px #CCC;border-bottom:1px solid rgba(0,0,0,0.25);position:relative;cursor:pointer;}.button:hover{background-color:#111;color:#fff;}.button:active{top:1px;}.button.white{background-color:white;color:#000}.button.red{background-color:red;}.button.green{background-color:green;}.button.blue{background-color:blue;}.button.black{background-color:black;}.button.grey{background-color:black;}</style>
+
+</head>
+<body>
+<div id="container">
+<canvas id="canvas" width="944" height="766">
+Sorry, your browser is not supported.
+</canvas>
+</div>
+ 
+</body>
+</html> 
